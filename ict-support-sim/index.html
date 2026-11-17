@@ -18,8 +18,17 @@ function render(){locked=false;show("quiz");const c=chosen[idx];$("progresslabel
 function pick(n,el){if(locked)return;locked=true;choiceIds[phase]=n;[...$("choices").children].forEach(b=>b.disabled=true);el.classList.add("chosen");$("finding").textContent=phase===0?"【確認結果】\n"+chosen[idx].opts[n][1]:"選んだ対応を記録しました。振り返り画面で判断の妥当性と限界を確認できます。";$("finding").classList.remove("hidden");$("next").textContent=phase===0?"情報をもとに次の判断へ":"この事例を振り返る";$("next").classList.remove("hidden")}
 function advance(){if(!locked)return;if(phase===0){phase=1;render();return}const c=chosen[idx],a=c.opts[choiceIds[0]],b=c.next[choiceIds[1]],s=a[2]+b[1];total+=s;history.push({t:c.title,a:a[0],b:b[0],p:s,firstTip:c.feedbackFirst[choiceIds[0]],nextTip:c.feedbackNext[choiceIds[1]]});$("reviewtitle").textContent=c.title;const firstFeedback=c.feedbackFirst[choiceIds[0]],nextFeedback=c.feedbackNext[choiceIds[1]];const missing=(2-a[2])+(2-b[1]);$("reviewbody").textContent="【最初の判断】 "+a[2]+"/2点\n"+a[0]+"\n確認結果："+a[1]+"\nアドバイス："+firstFeedback+"\n\n【次の対応】 "+b[1]+"/2点\n"+b[0]+"\nアドバイス："+nextFeedback+"\n\n【判断のポイント】\n"+c.lesson+"\n\n【評価】"+s+"/4点"+(missing?"　満点との差："+missing+"点。上のアドバイスを読んで、何を先に確認すべきか考え直しましょう。":"　この条件では十分妥当な判断です。ほかの対応が必要になる条件も考えてみましょう。");$("continue").textContent=idx===chosen.length-1?"全体結果へ":"次の事例へ";show("review")}
 function continueGame(){idx++;if(idx>=chosen.length){finish();return}caseStart()}
-function finish(){show("finish");$("score").textContent="今回の判断： "+total+" / "+(chosen.length*4)+"点\n\n"+history.map((h,i)=>String(i+1)+". "+h.t).join("\n")+"\n\n※点数はあくまで教材上の優先度の目安です。低い得点の選択にも合理性があります。実際の現場では複数の妥当な判断があります。教員と学習目標を確認し、安全・権限・本人の操作を尊重することが重要です。"}
-function copy(){const msg="ICT支援員トラブル対応シミュレーター\n評価："+total+"/"+(chosen.length*4)+"\n"+history.map((h,i)=>(i+1)+". "+h.t+"\n確認："+h.a+"\n対応："+h.b).join("\n\n")+"\n\n振り返り：\n"+$("reflection").value;const status=$("copystatus");if(navigator.clipboard?.writeText){navigator.clipboard.writeText(msg).then(()=>status.textContent="コピーしました。Teamsの課題へ貼り付けてください。").catch(()=>status.textContent="コピーできません。結果を選択してTeamsへ転記してください。")}else{const t=document.createElement("textarea");t.value=msg;document.body.append(t);t.select();try{document.execCommand("copy");status.textContent="コピーを試しました。Teamsに貼り付けて確認してください。"}catch(e){status.textContent="結果を選択してTeamsへ転記してください。"}t.remove()}}
+function finish(){
+show("finish");
+const detail=history.map((h,i)=>String(i+1)+". "+h.t+"｜"+h.p+"/4点"+(h.p<4?"\n改善点："+[h.firstTip,h.nextTip].filter(x=>x&&!x.startsWith("今回の")&&!x.startsWith("この条件")).join("　"):"\nこの条件では妥当な判断です。別の状況で変わる点も考えてみましょう。")).join("\n\n");
+$("score").textContent="今回の判断："+total+" / "+(chosen.length*4)+"点\n\n"+detail+"\n\n※評価はケースで与えた情報と時間条件に基づく学習用の目安であり、実務での唯一の正解ではありません。";
+}
+function copy(){
+const msg="ICT支援員トラブル対応シミュレーター\n評価："+total+"/"+(chosen.length*4)+"\n\n"+history.map((h,i)=>(i+1)+". "+h.t+" ["+h.p+"/4点]\n最初の判断："+h.a+"\n次の対応："+h.b+"\nアドバイス："+h.firstTip+" "+h.nextTip).join("\n\n")+"\n\n振り返り：\n"+$("reflection").value;
+const status=$("copystatus");
+if(navigator.clipboard?.writeText){navigator.clipboard.writeText(msg).then(()=>status.textContent="コピーしました。Teamsの課題へ貼り付けてください。").catch(()=>status.textContent="コピーできません。結果を選択してTeamsへ転記してください。");}
+else{const t=document.createElement("textarea");t.value=msg;document.body.append(t);t.select();try{document.execCommand("copy");status.textContent="コピーを試しました。Teamsに貼り付けて確認してください。";}catch(e){status.textContent="結果を選択してTeamsへ転記してください。";}t.remove();}
+}
 $("go").onclick=begin;$("next").onclick=advance;$("continue").onclick=continueGame;$("again").onclick=()=>show("start");$("copy").onclick=copy;
 $("category").onchange=()=>{const max=$("category").value==="all"?15:DATA.filter(c=>c.c===$("category").value).length;[...$("count").options].forEach(o=>o.disabled=Number(o.value)>max);if(Number($("count").value)>max)$("count").value=max>=5?"5":"3"};
 </script></body></html>
